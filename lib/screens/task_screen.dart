@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:to_do_list/screens/realtime_tasks.dart';
+import 'package:to_do_list/services/firestore.dart';
 import 'package:to_do_list/widgets/custom_navbar_widget.dart';
 
 class ListApp extends StatefulWidget {
@@ -11,6 +13,9 @@ class ListApp extends StatefulWidget {
 }
 
 class _ListAppState extends State<ListApp> {
+  // firestore services Object
+  final FirestoreServices firestoreService = FirestoreServices();
+
   // controllers
   TextEditingController addTaskController = TextEditingController();
   TextEditingController updateTaskController = TextEditingController();
@@ -27,11 +32,15 @@ class _ListAppState extends State<ListApp> {
   ];
 
   // CRUD Operations
-  void addTask() {
+  Future addTask() async {
     String newTask = addTaskController.text;
+
     if (!(tasks.contains(newTask)) && newTask.isNotEmpty) {
       tasks.add(addTaskController.text);
       isadd = true;
+
+      // adding task to firestore too
+      firestoreService.createTask(newTask);
     } else {}
     setState(() {});
   }
@@ -82,6 +91,17 @@ class _ListAppState extends State<ListApp> {
         ),
         toolbarHeight: 70,
         centerTitle: true,
+        actions: [
+          IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const RealTimeTasks()),
+                );
+              },
+              icon: Icon(Icons.task_sharp))
+        ],
       ),
       drawer: const CustomNavbar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -96,7 +116,42 @@ class _ListAppState extends State<ListApp> {
                 content: TextField(
                   onSubmitted: (a) {
                     addTask();
+
+                    Navigator.pop(context);
+                    isadd
+                        ? ScaffoldMessenger.of(context)
+                            .showSnackBar(const SnackBar(
+                            duration: Duration(seconds: 1),
+                            content: Text(
+                              "Task Added Successfully",
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 25, 235, 246),
+                              ),
+                            ),
+                          ))
+                        : addTaskController.text.isEmpty
+                            ? ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                                duration: Duration(seconds: 1),
+                                content: Text(
+                                  "Task Can't be Empty",
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 25, 235, 246),
+                                  ),
+                                ),
+                              ))
+                            : ScaffoldMessenger.of(context)
+                                .showSnackBar(const SnackBar(
+                                duration: Duration(seconds: 1),
+                                content: Text(
+                                  "Task Already Exists",
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 25, 235, 246),
+                                  ),
+                                ),
+                              ));
                     addTaskController.clear();
+                    isadd = false;
                   },
                   controller: addTaskController,
                   decoration: const InputDecoration(
