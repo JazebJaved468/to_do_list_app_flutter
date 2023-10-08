@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:to_do_list/screens/realtime_tasks_rough.dart';
 import 'package:to_do_list/services/firestore.dart';
 import 'package:to_do_list/widgets/custom_navbar_widget.dart';
 
