@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:to_do_list/firebase_options.dart';
-import 'package:to_do_list/screens/realtime_tasks.dart';
 import 'screens/task_screen.dart';
 
 void main() async {
@@ -19,7 +18,7 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       title: "To Do List",
       debugShowCheckedModeBanner: false,
-      home: RealTimeTasks(),
+      home: ListApp(),
     );
   }
 }

@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:to_do_list/screens/realtime_tasks.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:to_do_list/screens/realtime_tasks_rough.dart';
 import 'package:to_do_list/services/firestore.dart';
 import 'package:to_do_list/widgets/custom_navbar_widget.dart';
 
@@ -19,46 +18,48 @@ class _ListAppState extends State<ListApp> {
   // controllers
   TextEditingController addTaskController = TextEditingController();
   TextEditingController updateTaskController = TextEditingController();
-  TextEditingController deleteTaskController = TextEditingController();
 
   int number = 0;
   bool isUpdate = false;
   bool isadd = false;
 
-  List tasks = [
-    "Sample1",
-    "Sample2",
-    "Sample3",
-  ];
+  // List tasks = [
+  //   "Sample1",
+  //   "Sample2",
+  //   "Sample3",
+  // ];
 
   // CRUD Operations
   Future addTask() async {
     String newTask = addTaskController.text;
 
-    if (!(tasks.contains(newTask)) && newTask.isNotEmpty) {
-      tasks.add(addTaskController.text);
+    if (newTask.isNotEmpty) {
       isadd = true;
 
       // adding task to firestore too
       firestoreService.createTask(newTask);
     } else {}
-    setState(() {});
   }
 
-  void updateTask(int index) {
+  Future updateTask(String taskID) async {
     String updatedTask = updateTaskController.text;
     debugPrint(updatedTask);
-    if (!(tasks.contains(updatedTask)) && updatedTask.isNotEmpty) {
-      tasks[index] = updatedTask;
+    if (updatedTask.isNotEmpty) {
+      // tasks[index] = updatedTask;
+
+      // updating task in firebase
+      firestoreService.updateTask(taskID, updatedTask);
       isUpdate = true;
     } else {}
 
-    setState(() {});
+    // setState(() {});
   }
 
-  void deleteTask(int index) {
-    tasks.removeAt(index);
-    setState(() {});
+  Future deleteTask(String taskID) async {
+    // tasks.removeAt(index);
+
+    // Deleting Task in firebase
+    firestoreService.deleteTask(taskID);
   }
 
   // styling variables
@@ -91,17 +92,6 @@ class _ListAppState extends State<ListApp> {
         ),
         toolbarHeight: 70,
         centerTitle: true,
-        actions: [
-          IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const RealTimeTasks()),
-                );
-              },
-              icon: Icon(Icons.task_sharp))
-        ],
       ),
       drawer: const CustomNavbar(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
@@ -237,184 +227,229 @@ class _ListAppState extends State<ListApp> {
           size: 25,
         ),
       ),
-      body: Container(
-        clipBehavior: Clip.hardEdge,
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 255, 255, 255),
-          boxShadow: const [
-            BoxShadow(
-              color: Color.fromARGB(255, 174, 174, 174),
-              blurRadius: 5.0, // soften the shadow
-              spreadRadius: 1.0,
-              offset: Offset(
-                0.0, // Move to right 5  horizontally
-                2.0, // Move to bottom 5 Vertically
-              ),
-            ),
-          ],
-          borderRadius: BorderRadius.circular(10),
-        ),
-        width: double.infinity,
-        child: ListView.builder(
-          shrinkWrap: true,
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            return Container(
-              decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Color.fromARGB(255, 30, 30, 30),
-                    width: 0.3,
-                  ),
-                ),
-              ),
-              child: ListTile(
-                title: Text('${tasks[index]}'),
-                trailing: Wrap(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                        Icons.edit,
-                        color: Color.fromARGB(255, 165, 206, 166),
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          updateTaskController.text = tasks[index];
-                        });
-                        showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                title: const Text("Update Task"),
-                                content: TextField(
-                                  controller: updateTaskController,
-                                ),
-                                actions: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                          },
-                                          style: dialogButtonStyle,
-                                          child: const Text("Cancel"),
-                                        ),
-                                        const Spacer(),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            updateTask(index);
-                                            Navigator.pop(context);
-                                            isUpdate
-                                                ? ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                    const SnackBar(
-                                                      duration:
-                                                          Duration(seconds: 1),
-                                                      content: Text(
-                                                        "Task Updated Successfully",
-                                                        style: TextStyle(
-                                                          color: Color.fromARGB(
-                                                              255,
-                                                              25,
-                                                              235,
-                                                              246),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                : ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                        const SnackBar(
-                                                    duration:
-                                                        Duration(seconds: 1),
-                                                    content: Text(
-                                                      "No tasks updated",
-                                                      style: TextStyle(
-                                                        color: Color.fromARGB(
-                                                            255, 25, 235, 246),
-                                                      ),
-                                                    ),
-                                                  ));
-                                            isUpdate = false;
-                                          },
-                                          style: dialogButtonStyle,
-                                          child: const Text("Update"),
-                                        )
-                                      ],
-                                    ),
-                                  )
-                                ],
-                              );
-                            });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        color: Color.fromARGB(255, 252, 145, 137),
-                      ),
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (context) {
-                              return AlertDialog(
-                                  content: const Text('Are you sure?'),
-                                  actions: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                            },
-                                            style: dialogButtonStyle,
-                                            child: const Text("Cancel"),
-                                          ),
-                                          const Spacer(),
-                                          ElevatedButton(
-                                            onPressed: () {
-                                              deleteTask(index);
-                                              Navigator.pop(context);
+      body: StreamBuilder(
+          stream: firestoreService.readTasks(),
+          builder: (context, snapshot) {
+            // if we have data get all the tasks
+            if (snapshot.hasData) {
+              final taskList = snapshot.data!.docs;
 
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(const SnackBar(
-                                                duration: Duration(seconds: 1),
-                                                content: Text(
-                                                  "Task Deleted Successfully",
-                                                  style: TextStyle(
-                                                    color: Color.fromARGB(
-                                                        255, 25, 235, 246),
-                                                  ),
-                                                ),
-                                              ));
-                                            },
-                                            style: dialogButtonStyle,
-                                            child: const Text("Delete"),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  ]);
-                            });
-                      },
+              return Container(
+                clipBehavior: Clip.hardEdge,
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 255, 255, 255),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color.fromARGB(255, 174, 174, 174),
+                      blurRadius: 5.0, // soften the shadow
+                      spreadRadius: 1.0,
+                      offset: Offset(
+                        0.0, // Move to right 5  horizontally
+                        2.0, // Move to bottom 5 Vertically
+                      ),
                     ),
                   ],
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
+                width: double.infinity,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: taskList.length,
+                  itemBuilder: (context, index) {
+                    // get each individual task
+                    DocumentSnapshot task = taskList[index];
+                    // print("task = ${task}");
+
+                    // get task id
+                    String taskID = task.id;
+                    // print("task id hai ye = ${task.id}");
+
+                    // get data of each task
+                    Map<String, dynamic> data =
+                        task.data() as Map<String, dynamic>;
+
+                    // get task content
+                    String content = data['content'];
+
+                    return Container(
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Color.fromARGB(255, 30, 30, 30),
+                            width: 0.3,
+                          ),
+                        ),
+                      ),
+                      child: ListTile(
+                        title: Text('$content'),
+                        trailing: Wrap(
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Color.fromARGB(255, 165, 206, 166),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  updateTaskController.text = content;
+                                });
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text("Update Task"),
+                                        content: TextField(
+                                          controller: updateTaskController,
+                                        ),
+                                        actions: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 20),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.pop(context);
+                                                  },
+                                                  style: dialogButtonStyle,
+                                                  child: const Text("Cancel"),
+                                                ),
+                                                const Spacer(),
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    updateTask(taskID);
+                                                    Navigator.pop(context);
+                                                    isUpdate
+                                                        ? ScaffoldMessenger.of(
+                                                                context)
+                                                            .showSnackBar(
+                                                            const SnackBar(
+                                                              duration:
+                                                                  Duration(
+                                                                      seconds:
+                                                                          1),
+                                                              content: Text(
+                                                                "Task Updated Successfully",
+                                                                style:
+                                                                    TextStyle(
+                                                                  color: Color
+                                                                      .fromARGB(
+                                                                          255,
+                                                                          25,
+                                                                          235,
+                                                                          246),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          )
+                                                        : ScaffoldMessenger.of(
+                                                                context)
+                                                            .showSnackBar(
+                                                                const SnackBar(
+                                                            duration: Duration(
+                                                                seconds: 1),
+                                                            content: Text(
+                                                              "No tasks updated",
+                                                              style: TextStyle(
+                                                                color: Color
+                                                                    .fromARGB(
+                                                                        255,
+                                                                        25,
+                                                                        235,
+                                                                        246),
+                                                              ),
+                                                            ),
+                                                          ));
+                                                    isUpdate = false;
+                                                  },
+                                                  style: dialogButtonStyle,
+                                                  child: const Text("Update"),
+                                                )
+                                              ],
+                                            ),
+                                          )
+                                        ],
+                                      );
+                                    });
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Color.fromARGB(255, 252, 145, 137),
+                              ),
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                          content: const Text('Are you sure?'),
+                                          actions: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 20),
+                                              child: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                children: [
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    style: dialogButtonStyle,
+                                                    child: const Text("Cancel"),
+                                                  ),
+                                                  const Spacer(),
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      deleteTask(taskID);
+                                                      Navigator.pop(context);
+
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                              const SnackBar(
+                                                        duration: Duration(
+                                                            seconds: 1),
+                                                        content: Text(
+                                                          "Task Deleted Successfully",
+                                                          style: TextStyle(
+                                                            color:
+                                                                Color.fromARGB(
+                                                                    255,
+                                                                    25,
+                                                                    235,
+                                                                    246),
+                                                          ),
+                                                        ),
+                                                      ));
+                                                    },
+                                                    style: dialogButtonStyle,
+                                                    child: const Text("Delete"),
+                                                  ),
+                                                ],
+                                              ),
+                                            )
+                                          ]);
+                                    });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          }),
     );
   }
 }
